@@ -1,0 +1,145 @@
+.DS_Store
+.idea
+*.log
+tmp/
+*.backup
+requirements.txt.backup
+
+# Local secrets / API tokens
+.env
+.env.*
+!.env.example
+
+*.py[cod]
+__pycache__/
+*.egg
+*.egg-info/
+build
+htmlcov
+.coverage
+.coverage.*
+coverage.xml
+# Python package build artifacts
+src/python_run/build/
+src/python_run/dist/
+
+/data/
+/build/
+/build-*/
+/local/
+/dist/
+/lib/
+/install/
+/download/
+/p/
+/o/
+/f/
+/s/
+*.so
+
+.venv/
+lightning_logs/
+
+# Claude settings
+# Default: ignore everything under .claude/ ...
+.claude/*
+# ... but keep shared automation (hooks, skills, settings, commands).
+# Personal/runtime files (settings.local.json, worktrees/, scheduled_tasks.lock,
+# .coverage, etc.) remain ignored via the leading `.claude/*` rule.
+!.claude/commands/
+!.claude/hooks/
+!.claude/skills/
+!.claude/settings.json
+!.claude/README.md
+settings.local.json
+
+# Generated audio files
+*.wav
+!test/**/*.wav
+
+# Test artifacts
+test_piper/
+test_build/
+test_windows_build/
+test_results/
+test_ci_binaries/
+build_log.zip
+# Root test files (should be in src/cpp/tests or src/python/tests)
+/test_*.cpp
+/test_*.c
+/test_*.py
+/test_*.sh
+/test_*
+!test/
+
+# Package build artifacts
+nupkgs/
+publish_test/
+# Test logs
+*.log
+
+# Benchmark results
+benchmark_results*.json
+streaming_comparison_results.json
+
+# Windows build artifacts
+*.dll
+*.exe
+windows_build_artifacts/
+CLAUDE.md
+
+# Rust build artifacts
+src/rust/target/
+src/rust/piper-python/target/
+src/rust/piper-python/Cargo.lock
+
+# WebAssembly temp directories
+src/wasm/openjtalk-web/temp/
+src/wasm/openjtalk-web/tools/
+
+# Debug and development scripts
+scripts/debug/
+debug_*.py
+test_phoneme*.py
+!src/python_run/tests/test_phoneme*.py
+verify_*.py
+analyze_*.py
+check_*.py
+!scripts/check_pua_consistency.py
+create_comprehensive_*.py
+add_missing_*.py
+retrain_*.py
+comprehensive_*.py
+tmp_*.py
+tmp_*/
+
+# Training datasets and downloaded models
+datasets/
+models/
+
+# Local working files
+checkpoints/
+output/
+output-*/
+dataset-*/
+libritts-r/
+moe-speech-*/
+css10-*/
+downloads/
+hf_upload/
+hf_readme.md
+rebuild_cache.py
+upload_webdataset.py
+bench_mb_istft.py
+pip-test/
+upiper_comparison_samples/
+compare_phonemes.txt
+phoneme_map.txt
+training_phonemes.txt
+id_check.txt
+sh_check.txt
+generate_upiper_samples.py
+nul
+test/models/tsukuyomi-chan/
+docs/development/usability-issues-2026-03.md
+src/rust/target/*
