@@ -1,0 +1,150 @@
+name: python-tests
+
+on:
+  workflow_call:
+  pull_request:
+    branches: [ dev ]
+    paths:
+      - 'src/python/**'
+      - 'src/python_run/**'
+      - 'test/**'
+      - 'tools/benchmark/**'
+      - '.github/workflows/python-tests.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: python-tests (${{ matrix.os }}, ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-latest, macos-latest]
+        python-version: ["3.11"]
+    
+    steps:
+    - uses: actions/checkout@v6
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install system dependencies (Ubuntu)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libsndfile1 sox build-essential
+    
+    - name: Install system dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        brew install libsndfile sox
+    
+    - name: Install Python dependencies (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        python -m pip install --upgrade pip setuptools wheel
+        pip install --no-cache-dir uv
+        cd src/python
+        uv pip install --system -e "g2p[all]" -e ".[test,train]"
+
+    - name: Install Python dependencies (Unix)
+      if: runner.os != 'Windows'
+      run: |
+        python -m pip install --upgrade pip
+        pip install --no-cache-dir uv
+        cd src/python
+        uv pip install --system -e "g2p[all]" -e ".[test,train]"
+
+    - name: Build Cython extensions (Unix)
+      if: runner.os != 'Windows'
+      run: |
+        cd src/python
+        uv pip install --system cython
+        python piper_train/vits/monotonic_align/setup.py build_ext --inplace
+
+    - name: Run unit tests (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        cd src/python
+        # Run unit tests excluding inference tests (which require torch)
+        pytest tests/ -v --tb=short -m "unit and not training and not benchmark and not inference"
+
+    - name: Run unit tests (Unix)
+      if: runner.os != 'Windows'
+      run: |
+        cd src/python
+        # Run unit tests excluding inference tests (which require torch)
+        pytest tests/ -v --tb=short -m "unit and not training and not benchmark and not inference"
+    
+    - name: Run integration tests (Unix only)
+      if: runner.os != 'Windows'
+      run: |
+        cd src/python
+        pytest tests/ -v --tb=short -m "integration and not benchmark"
+
+    - name: Run inference tests (Unix only)
+      if: runner.os != 'Windows'
+      run: |
+        cd src/python
+        pytest tests/ -v --tb=short -m "inference and unit"
+
+    # ---------------------------------------------------------------
+    # Runtime package tests (src/python_run — PyPI piper-plus)
+    # ---------------------------------------------------------------
+    - name: Install runtime package dependencies
+      run: |
+        pip install pyopenjtalk-plus g2p-en pypinyin
+        # HTTP サーバー (FastAPI) のテストに必要な依存。バージョン制約は src/python_run/setup.py の [http] extras で一元管理。
+        pip install fastapi 'uvicorn[standard]' httpx
+        python -c "import nltk; nltk.download('averaged_perceptron_tagger_eng', quiet=True); nltk.download('cmudict', quiet=True)"
+      env:
+        PYTHONUTF8: '1'
+
+    - name: Run runtime phonemization tests
+      run: |
+        cd src/python_run
+        pytest tests/test_japanese_phonemization.py tests/test_multilingual_integration.py -v --tb=short --override-ini="addopts="
+      env:
+        PYTHONUTF8: '1'
+
+    - name: Run runtime full tests (config, training manager, CLI, timing)
+      run: |
+        cd src/python_run
+        pytest tests/test_config_fallback.py tests/test_english_phonemization.py tests/test_runtime.py tests/test_util_impl.py tests/test_cli_models.py tests/test_training_manager.py tests/test_training_integration.py tests/test_phoneme_timing.py tests/test_voice_timing.py tests/test_http_timing.py -v --tb=short --override-ini="addopts="
+      env:
+        PYTHONUTF8: '1'
+
+    # ---------------------------------------------------------------
+    # Legacy tests (test/ — speaker_encoder, phoneme_ids, sampler)
+    # ---------------------------------------------------------------
+    - name: Run legacy tests (speaker_encoder, phoneme_ids, sampler)
+      run: |
+        cd src/python
+        pytest ../../test/ -v --tb=short --override-ini="addopts="
+      env:
+        PYTHONUTF8: '1'
+
+    # ---------------------------------------------------------------
+    # Benchmark tool tests (tools/benchmark/)
+    # ---------------------------------------------------------------
+    - name: Run benchmark tool tests
+      run: |
+        cd src/python
+        pytest ../../tools/benchmark/test_benchmark.py -v --tb=short --override-ini="addopts="
+      env:
+        PYTHONUTF8: '1'
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: test-results-${{ matrix.os }}-${{ matrix.python-version }}
+        path: |
+          src/python/.pytest_cache
+          src/python/htmlcov
+        retention-days: 7
