@@ -1,0 +1,241 @@
+[build-system]
+requires = ["setuptools>=45", "wheel", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "piper-plus"
+dynamic = ["version"]
+description = "Training environment for piper-plus"
+license = {text = "MIT"}
+requires-python = ">=3.11"
+dependencies = [
+    "huggingface-hub>=0.30.0,<1.0",
+    "numpy<2.3",
+    "tensorboard>=2.20.0",
+    "g2p-en>=2.1.0",
+    "torch>=2.1.0",
+    "torchaudio>=2.1.0",
+    "pytorch-lightning>=2.0",
+    "librosa>=0.10",
+    "cython>=3.2.4",
+    "pyopenjtalk-plus>=0.4",
+    "wandb>=0.19",
+    "transformers>=4.30",
+    "piper-train[train]",
+    "onnxscript>=0.6.2",
+    "onnxruntime>=1.17",
+    "ghapi>=1.0.13",
+    "onnx>=1.21.0",
+]
+
+[project.optional-dependencies]
+preprocess = [
+    "piper-phonemize>=1.1.0",
+]
+
+inference = [
+    "onnxruntime>=1.17",
+    "soundfile>=0.12",
+    "pyopenjtalk-plus",
+    "g2p-en>=2.1.0",
+    "fastapi>=0.110",
+    "uvicorn>=0.27",
+]
+
+inference-gpu = [
+    "onnxruntime-gpu>=1.17",
+    "soundfile>=0.12",
+    "pyopenjtalk-plus",
+    "g2p-en>=2.1.0",
+    "fastapi>=0.110",
+    "uvicorn>=0.27",
+]
+
+multilingual = [
+    "pypinyin>=0.50",
+    "g2pk2>=0.0.3",
+]
+
+train = [
+    "scipy>=1.12",
+    "librosa>=0.10",
+    "soundfile>=0.12",
+    "pytorch-lightning>=2.0",
+    "torchmetrics>=1.0",
+    "transformers>=4.38",
+    "onnx>=1.21.0",
+    "onnxruntime>=1.17",
+    "pyopenjtalk-plus",
+    "mecab-python3>=1.0",
+    "unidic-lite>=1.0",
+    "g2p-en>=2.1.0",
+    "tensorboard>=2.16",
+    "wandb>=0.16",
+    "tqdm>=4.66",
+    "einops>=0.7",
+    "numba>=0.59",
+    "matplotlib>=3.8",
+    "seaborn>=0.13",
+    "pyyaml>=6.0",
+    "onnxsim-prebuilt",
+]
+
+dev = [
+    "black==26.3.1",
+    "flake8==6.1.0",
+    "mypy>=1.13",
+    "pylint==3.0.2",
+    "ruff==0.12.5",
+    "pytest>=9.0.3,<10",
+    "pytest-cov==4.1.0",
+    "pytest-xdist==3.5.0",
+    "pytest-timeout==2.2.0",
+    "pytest-mock==3.12.0",
+    "coverage[toml]>=7.3",
+    "types-requests==2.31.0",
+    "types-PyYAML==6.0.12",
+    "sphinx>=4.0.0",
+    "sphinx-rtd-theme>=1.0.0",
+    "pre-commit>=3.0.0",
+]
+
+test = [
+    "pytest>=9.0.3,<10",
+    "pytest-cov==4.1.0",
+    "pytest-xdist==3.5.0",
+    "pytest-timeout==2.2.0",
+    "pytest-mock==3.12.0",
+    "coverage[toml]>=7.3",
+    "ruff==0.12.5",
+    "mypy>=1.13",
+    "types-requests==2.31.0",
+    "types-PyYAML==6.0.12",
+]
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cu128", marker = "sys_platform == 'linux'" },
+]
+torchaudio = [
+    { index = "pytorch-cu128", marker = "sys_platform == 'linux'" },
+]
+piper-train = { workspace = true, editable = true }
+piper-plus-g2p = { workspace = true, editable = true }
+
+[tool.uv.workspace]
+members = [
+    "src/python",
+    "src/python/g2p",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "ruff==0.12.5",
+    "pytest>=9.0.3,<10",
+    "pytest-timeout>=2.2.0",
+    "black==26.3.1",
+    "fastapi>=0.135.1",
+    "httpx>=0.28.1",
+]
+
+[tool.ruff]
+# Ruffの基本設定
+line-length = 88  # blackと同じ行長
+target-version = "py311"  # Python 3.11以降をターゲット
+
+# 除外するファイルとディレクトリ
+exclude = [
+    ".git",
+    "__pycache__",
+    "build",
+    "dist",
+    "*.egg-info",
+    "src/python/piper_train/vits/monotonic_align",  # Cython generated
+    # Temporary debug/test scripts in root directory
+    "check_*.py",
+    "debug_*.py",
+    "test_*.py",
+    "analyze_*.py",
+    "verify_*.py",
+    "export_*.sh",
+]
+
+[tool.ruff.lint]
+# 有効にするルール
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "B",    # flake8-bugbear
+    "C4",   # flake8-comprehensions
+    "UP",   # pyupgrade
+    "ARG",  # flake8-unused-arguments
+    "PL",   # pylint
+]
+
+# 除外するルール
+ignore = [
+    "E501",  # line too long (blackが処理)
+    "PLR0913",  # Too many arguments to function call
+    "PLR2004",  # Magic value used in comparison
+    "PLR0912",  # Too many branches
+    "PLR0915",  # Too many statements
+    "ARG001",  # Unused function argument
+    "ARG002",  # Unused method argument
+    "PLW2901",  # Redefined loop name
+]
+
+# isort互換設定
+[tool.ruff.lint.isort]
+known-first-party = ["piper", "piper_train"]
+combine-as-imports = true
+lines-after-imports = 2
+
+# flake8-quotes互換設定
+[tool.ruff.lint.flake8-quotes]
+inline-quotes = "double"
+
+# Per-file ignores
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "F403"]
+"src/python/tests/*" = ["ARG", "PLC0415"]  # Allow conditional imports in tests
+"scripts/*" = ["ARG", "PLC0415"]  # Allow conditional imports in scripts  
+# token_mapper.py: グローバル変数を使用した音素マッピングシステム
+"src/python/piper_train/phonemize/token_mapper.py" = ["PLW0603"]
+# korean.py: G2p()インスタンスのモジュールレベルキャッシュ
+"src/python/piper_train/phonemize/korean.py" = ["PLW0603"]
+# bilingual.py: 条件付きインポート（後方互換のため動的切り替え）
+"src/python/piper_train/phonemize/bilingual.py" = ["PLC0415"]
+# mel_processing.py: パフォーマンス最適化のためのグローバルキャッシュ
+"src/python/piper_train/vits/mel_processing.py" = ["PLW0602"]
+# test_phonemize.py: オプショナルな依存関係の条件付きインポート
+"src/python/tests/test_phonemize.py" = ["E402"]
+# preprocess.py: 条件付きインポートで警告を抑制
+"src/python/piper_train/preprocess.py" = ["PLC0415"]
+"src/python/piper_train/phonemize/english.py" = ["PLC0415", "PLW0603"]
+# prepare scripts: 条件付きインポートを許可
+"src/python/prepare_*.py" = ["PLC0415"]
+# runtime files: 条件付きインポートを許可
+"src/python_run/*" = ["PLC0415"]
+# Docker test scripts: テスト関数内での条件付きインポートを許可
+"docker/**/test.py" = ["PLC0415"]
+# HuggingFace Spaces app: オプショナルな多言語依存の条件付きインポート
+"huggingface-space/*.py" = ["PLC0415"]
+# __main__.py: torch.serialization.add_safe_globals() がimport前に必要
+"src/python/piper_train/__main__.py" = ["E402"]
+# export_onnx.py: 同上
+"src/python/piper_train/export_onnx.py" = ["E402"]
+# lightning.py: メソッド内の遅延import（循環import回避、オプショナル依存）
+"src/python/piper_train/vits/lightning.py" = ["PLC0415"]
+
+[tool.setuptools.packages.find]
+where = ["src/python"]
+
+[tool.setuptools.dynamic]
+version = {file = "VERSION"}
